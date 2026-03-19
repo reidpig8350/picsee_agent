@@ -16,13 +16,16 @@ logging.getLogger('google_genai').setLevel(logging.ERROR)
 app = FastAPI()
 picsee_agent = PicSeeAgent()
 
+class Message(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
-    message: str
+    messages: list[Message]
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    user_input = request.message
-    response = await picsee_agent.process_message(user_input)
+    response = await picsee_agent.process_message(request.messages)
     return {"response": response}
 
 if __name__ == "__main__":

@@ -140,12 +140,13 @@ class PicSeeAgent:
             ]
         )
 
-    async def process_message(self, user_input: str):
+    async def process_message(self, messages: list):
         contents_dialogs = [
             types.Content(
-                role="user",
-                parts=[types.Part.from_text(text=user_input)],
+                role=msg.role,
+                parts=[types.Part.from_text(text=msg.content)],
             )
+            for msg in messages
         ]
 
         response = self.client.models.generate_content(model=self.model, contents=contents_dialogs, config=self.generate_content_config)
