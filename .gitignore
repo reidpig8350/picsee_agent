@@ -16,3 +16,4 @@ __pycache__/
 
 #
 config.py
+gemini_history/

@@ -1,0 +1,24 @@
+steps:
+# Build the Docker image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'asia-east1-docker.pkg.dev/awsomecathay/picsee-agent-repo/picsee-agent:latest', '.']
+# Push the Docker image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'asia-east1-docker.pkg.dev/awsomecathay/picsee-agent-repo/picsee-agent:latest']
+# Deploy to Cloud Run
+- name: 'gcr.io/google.com/cloudsdk/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'deploy'
+  - 'picsee-agent' # Cloud Run 服務名稱
+  - '--image'
+  - 'asia-east1-docker.pkg.dev/awsomecathay/picsee-agent-repo/picsee-agent:latest'
+  - '--region'
+  - 'asia-east1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+  - '--set-env-vars=GCP_PROJECT_ID=awsomecathay'
+  images:
+  - 'asia-east1-docker.pkg.dev/awsomecathay/picsee-agent-repo/picsee-agent:latest'

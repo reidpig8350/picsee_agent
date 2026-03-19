@@ -41,11 +41,13 @@
         }
         #input-container {
             display: flex;
+            flex-wrap: wrap; /* 允許換行 */
             padding: 15px 20px;
             border-top: 1px solid #eee;
             background-color: #fff;
             box-shadow: 0 -1px 5px rgba(0,0,0,0.05);
         }
+        #employee-id-input,
         #user-input {
             flex-grow: 1;
             padding: 10px 15px;
@@ -53,7 +55,14 @@
             border-radius: 20px;
             font-size: 16px;
             outline: none;
+            margin-bottom: 10px; /* 增加間距 */
+        }
+        #employee-id-input {
+            width: 100%; /* 讓員工編號輸入框佔滿一行 */
+        }
+        #user-input {
             margin-right: 10px;
+            margin-bottom: 0; /* 覆寫上面的間距 */
         }
         #send-button {
             background-color: #4CAF50;
@@ -73,6 +82,7 @@
 <body>
     <div id="chat-container"></div>
     <div id="input-container">
+        <input type="text" id="employee-id-input" placeholder="輸入員工編號...">
         <input type="text" id="user-input" placeholder="輸入你的訊息...">
         <button id="send-button">發送</button>
     </div>
@@ -81,6 +91,7 @@
         let messages = []; // 儲存對話歷史
 
         const chatContainer = document.getElementById('chat-container');
+        const employeeIdInput = document.getElementById('employee-id-input'); // 新增
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
 
@@ -95,7 +106,14 @@
         // 發送訊息給後端
         async function sendMessage() {
             const content = userInput.value.trim();
+            const employeeId = employeeIdInput.value.trim(); // 取得員工編號
             if (content === '') return;
+
+            // 檢查員工編號是否已填寫
+            if (employeeId === '') {
+                alert('請輸入員工編號。');
+                return;
+            }
 
             displayMessage('user', content);
             messages.push({ role: 'user', content: content });
@@ -106,11 +124,17 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-Employee-ID': employeeId, // 加入員工編號標頭
                     },
                     body: JSON.stringify({ messages: messages }), // 傳送整個對話歷史
                 });
 
                 if (!response.ok) {
+                    // 處理錯誤回應，例如 401 Unauthorized
+                    if (response.status === 401) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Unauthorized: Invalid Employee ID.');
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -121,7 +145,7 @@
 
             } catch (error) {
                 console.error('Error sending message:', error);
-                displayMessage('model', '抱歉，與助理連線失敗。請稍後再試。');
+                displayMessage('model', `抱歉，與助理連線失敗。錯誤：${error.message || error}。請確認員工編號是否正確或稍後再試。`);
             }
         }
 
@@ -131,10 +155,16 @@
                 sendMessage();
             }
         });
+        employeeIdInput.addEventListener('keypress', (e) => { // 允許員工編號輸入框按Enter發送
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
 
         // 初始歡迎訊息
-        displayMessage('model', '您好！我是您的 PicSee 縮網址助理，請問有什麼可以協助您的嗎？');
-        messages.push({ role: 'model', content: '您好！我是您的 PicSee 縮網址助理，請問有什麼可以協助您的嗎？' });
+        displayMessage('model', '您好！我是您的 PicSee 縮網址助理，請先輸入您的員工編號，然後再開始對談。');
+        messages.push({ role: 'model', content: '您好！我是您的 PicSee 縮網址助理，請先輸入您的員工編號，然後再開始對談。' });
     </script>
 </body>
 </html>
+
