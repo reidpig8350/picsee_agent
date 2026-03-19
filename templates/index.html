@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicSee 縮網址助理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f4f7f6;
+        }
+        #chat-container {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse; /* 新訊息在底部 */
+        }
+        .message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .message.user {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .message.model {
+            background-color: #ffffff;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        #input-container {
+            display: flex;
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            background-color: #fff;
+            box-shadow: 0 -1px 5px rgba(0,0,0,0.05);
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+            margin-right: 10px;
+        }
+        #send-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #send-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="輸入你的訊息...">
+        <button id="send-button">發送</button>
+    </div>
+
+    <script>
+        let messages = []; // 儲存對話歷史
+
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        // 顯示訊息到聊天視窗
+        function displayMessage(role, content) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', role);
+            messageElement.textContent = content;
+            chatContainer.prepend(messageElement); // 新訊息在底部
+        }
+
+        // 發送訊息給後端
+        async function sendMessage() {
+            const content = userInput.value.trim();
+            if (content === '') return;
+
+            displayMessage('user', content);
+            messages.push({ role: 'user', content: content });
+            userInput.value = ''; // 清空輸入框
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ messages: messages }), // 傳送整個對話歷史
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const modelResponse = data.response;
+                displayMessage('model', modelResponse);
+                messages.push({ role: 'model', content: modelResponse });
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                displayMessage('model', '抱歉，與助理連線失敗。請稍後再試。');
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // 初始歡迎訊息
+        displayMessage('model', '您好！我是您的 PicSee 縮網址助理，請問有什麼可以協助您的嗎？');
+        messages.push({ role: 'model', content: '您好！我是您的 PicSee 縮網址助理，請問有什麼可以協助您的嗎？' });
+    </script>
+</body>
+</html>
