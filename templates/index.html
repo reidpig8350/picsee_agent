@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PicSee 縮網址助理</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> <!-- Marked.js CDN -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,6 +40,28 @@
             align-self: flex-start;
             border-bottom-left-radius: 5px;
         }
+        /* Markdown 樣式 */
+        .message.model pre,
+        .message.model code {
+            background-color: #e0e0e0;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap; /* 確保代碼換行 */
+        }
+        .message.model pre {
+            padding: 10px;
+            display: block;
+            overflow-x: auto;
+        }
+        .message.model ul,
+        .message.model ol {
+            padding-left: 20px;
+        }
+        .message.model li {
+            margin-bottom: 5px;
+        }
+
         #input-container {
             display: flex;
             flex-wrap: wrap; /* 允許換行 */
@@ -99,7 +122,7 @@
         function displayMessage(role, content) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', role);
-            messageElement.textContent = content;
+            messageElement.innerHTML = marked.parse(content); // 使用 marked.parse() 解析 Markdown
             chatContainer.prepend(messageElement); // 新訊息在底部
         }
 
