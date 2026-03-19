@@ -1,0 +1,18 @@
+# 虛擬環境
+bin/
+include/
+lib/
+pyvenv.cfg
+
+# Python 快取
+__pycache__/
+*.pyc
+
+# 環境變數 (如果你有建立 .env 檔案的話)
+.env
+
+# 操作系統產生的雜物
+.DS_Store
+
+#
+config.py
