@@ -6,7 +6,8 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'asia-east1-docker.pkg.dev/awsomecathay/picsee-agent-repo/picsee-agent:latest']
 # Deploy to Cloud Run
-- name: 'us-central1-docker.pkg.dev/cloudsdktool/google-cloud-cli'  entrypoint: gcloud
+name: 'us-central1-docker.pkg.dev/cloudsdktool/google-cloud-cli'
+entrypoint: gcloud
   args:
   - 'run'
   - 'deploy'
