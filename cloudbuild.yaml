@@ -20,5 +20,3 @@ steps:
   - 'managed'
   - '--allow-unauthenticated'
   - '--set-env-vars=GCP_PROJECT_ID=awsomecathay'
-  images:
-  - 'asia-east1-docker.pkg.dev/awsomecathay/picsee-agent-repo/picsee-agent:latest'
