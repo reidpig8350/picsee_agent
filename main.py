@@ -15,34 +15,21 @@ from agent import PicSeeAgent
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO) # Set base logging level to INFO
 logging.getLogger('google_genai').setLevel(logging.ERROR)
 
-app = FastAPI()
-picsee_agent = PicSeeAgent()
-templates = Jinja2Templates(directory="templates")
+logger = logging.getLogger(__name__)
 
-import logging
-import os
-import json
-from google.cloud import secretmanager
-
-import uvicorn
-from fastapi import FastAPI, HTTPException, Request, Depends, Header
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-
-from dotenv import load_dotenv
-
-from agent import PicSeeAgent
-
-load_dotenv()
-
-logging.getLogger('google_genai').setLevel(logging.ERROR)
+logger.info("Starting FastAPI application setup...")
 
 app = FastAPI()
+logger.info("FastAPI app instance created.")
+
 picsee_agent = PicSeeAgent()
+logger.info("PicSeeAgent instance created.")
+
 templates = Jinja2Templates(directory="templates")
+logger.info("Jinja2Templates configured.")
 
 # Cache for valid employee IDs
 VALID_EMPLOYEE_IDS = []
