@@ -19,6 +19,7 @@ steps:
   - '--platform'
   - 'managed'
   - '--allow-unauthenticated'
-  - '--set-env-vars=GCP_PROJECT_ID=awsomecathay,GOOGLE_API_KEY=SECRET_NAME=GOOGLE_API_KEY,SECRET_VERSION=latest,PICSEE_ACCESS_TOKEN=SECRET_NAME=PICSEE_ACCESS_TOKEN,SECRET_VERSION=latest'                                                                               
+  - '--set-env-vars=GCP_PROJECT_ID=awsomecathay'
+  - '--set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest,PICSEE_ACCESS_TOKEN=PICSEE_ACCESS_TOKEN:latest'                                                                               
   - '--project' # 這個 --project 參數是給 gcloud run deploy 命令本身的                                                             
   - 'awsomecathay'
