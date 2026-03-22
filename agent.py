@@ -20,7 +20,7 @@ class PicSeeAgent:
             **Page Code 的定義：**
 
             *   Page Code 是國泰世華 APP 中每個頁面獨一無二的代號，用於唯一識別 APP 中的特定頁面，透過Page Code可以引導CUBE App打開指定畫面。
-            *   它類似於網頁的網址。APP 開發團隊對外將此頁面代號稱為 "Page Code"。
+            *   它類似於網頁的網址。APP 開發團隊對外將此頁面代號稱為 "Page Code"。」
             *   **重要：** Page Code 與 APP 頁面的連結需要額外開發。如果使用者的行銷需求無法從現有的 "Page Code 清單" 中滿足，則必須向 APP 開發團隊提出新的 Page Code 需求。可透過信件向數位銀行科技部的施景輔聯繫，
 
             **使用者輸入：**
@@ -80,8 +80,8 @@ class PicSeeAgent:
         if not self.google_api_key:
             raise ValueError("GOOGLE_API_KEY not set")
 
-        self.client = genai.Client(api_key=self.google_api_key)
-        self.model = "gemini-2.5-flash"
+        genai.configure(api_key=self.google_api_key)
+        self.model_name = "gemini-2.5-flash"
 
         self.tools = [
             types.Tool(
@@ -89,16 +89,16 @@ class PicSeeAgent:
                     types.FunctionDeclaration(
                         name="create_picsee_link",
                         description="使用 PicSee API 創建短連結，一次只能產生一個縮網址，執行後回傳deeplink url。使用者需要輸入page code, utm_source, utm_medium, utm_campaign。其中page code是必填, 而utm_source, utm_medium, utm_campaign則為選填。因為`utm_source`, `utm_medium`, `utm_campaign`是要放在URL的Query String，所以特殊符號要符合Query String的規範。例如不可以包含空白、`#`符號、`?`符號",
-                        parameters=genai.types.Schema(
-                            type=genai.types.Type.OBJECT,
-                            required=["page_code"],
-                            properties={
-                                "page_code": genai.types.Schema(type=genai.types.Type.STRING),
-                                "utm_source": genai.types.Schema(type=genai.types.Type.STRING),
-                                "utm_medium": genai.types.Schema(type=genai.types.Type.STRING),
-                                "utm_campaign": genai.types.Schema(type=genai.types.Type.STRING),
+                        parameters={
+                            "type": "OBJECT",
+                            "required": ["page_code"],
+                            "properties": {
+                                "page_code": {"type": "STRING"},
+                                "utm_source": {"type": "STRING"},
+                                "utm_medium": {"type": "STRING"},
+                                "utm_campaign": {"type": "STRING"},
                             },
-                        ),
+                        },
                     ),
                 ]
             ),
@@ -107,13 +107,13 @@ class PicSeeAgent:
                     types.FunctionDeclaration(
                         name="short_link_analytics",
                         description="輸入短網址的URL或者短網址的ID，回傳指定短網址的總點擊數，並且一次只能回傳一個連結的數據。有限制條件：1. 無法依據時間區間回傳資料, 2. 如果使用者提供URL，網域必須是'cube.cathaybk.com.tw'或者'cube-app.tw'",
-                        parameters=genai.types.Schema(
-                            type=genai.types.Type.OBJECT,
-                            required=["link_url"],
-                            properties={
-                                "link_url": genai.types.Schema(type=genai.types.Type.STRING),
+                        parameters={
+                            "type": "OBJECT",
+                            "required": ["link_url"],
+                            "properties": {
+                                "link_url": {"type": "STRING"},
                             },
-                        ),
+                        },
                     ),
                 ]
             ),
@@ -122,34 +122,33 @@ class PicSeeAgent:
                     types.FunctionDeclaration(
                         name="get_page_code_list",
                         description="取得所有可用的Page Code，回傳List of JSONs",
-                        parameters=genai.types.Schema(
-                            type=genai.types.Type.OBJECT,
-                        ),
+                        parameters={
+                            "type": "OBJECT",
+                        },
                     ),
                 ]
             )
         ]
-
-        self.generate_content_config = types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(
-                thinking_budget=-1,
-            ),
-            tools=self.tools,
-            system_instruction=[
-                types.Part.from_text(text=self.system_instruction),
-            ]
-        )
+        self.system_instruction_parts = [
+            {"text": self.system_instruction},
+        ]
 
     async def process_message(self, messages: list):
         contents_dialogs = [
-            types.Content(
-                role=msg.role,
-                parts=[types.Part.from_text(text=msg.content)],
-            )
+            {
+                "role": msg.role,
+                "parts": [{"text": msg.content}],
+            }
             for msg in messages
         ]
 
-        response = self.client.models.generate_content(model=self.model, contents=contents_dialogs, config=self.generate_content_config)
+        model_instance = genai.GenerativeModel(
+            model_name=self.model_name,
+            tools=self.tools,
+            system_instruction=self.system_instruction_parts
+        )
+
+        response = model_instance.generate_content(contents=contents_dialogs)
 
         # Check for function calls
         if response.candidates and response.candidates[0].content.parts and response.candidates[0].content.parts[0].function_call:
@@ -189,20 +188,20 @@ class PicSeeAgent:
             except Exception as e: # Catch all exceptions here, specific HTTP or request exceptions can be handled inside picsee_api
                 tool_output = {"error": f"Tool execution failed: {e}"}
 
-            tool_message_content = types.Content(
-                role='tool',
-                parts=[
+            tool_message_content = {
+                "role": 'tool',
+                "parts": [
                     {"function_response": {
                         "name": tool_name,
                         "response": tool_output
                     }}
                 ]
-            )
+            }
             contents_dialogs.append(tool_message_content)
-            response_after_processing_tool = self.client.models.generate_content(model=self.model, contents=contents_dialogs, config=self.generate_content_config)
-            return response_after_processing_tool.text
+            response_after_processing_tool = model_instance.generate_content(contents=contents_dialogs)
+            return response_after_processing_tool.candidates[0].content.parts[0].text
 
-        elif response.text:
-            return response.text
+        elif response.candidates and response.candidates[0].content.parts and response.candidates[0].content.parts[0].text:
+            return response.candidates[0].content.parts[0].text
         else:
             return "沒有回應。"
