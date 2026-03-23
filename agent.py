@@ -63,7 +63,7 @@ class PicSeeAgent:
             1.  取得使用者輸入的 `page code`。
             2.  驗證 `page code` 格式是否正確。不正確則告知使用者並停止。
             3.  驗證 `page code` 是否存在於清單中。不存在則告知使用者並停止。
-            4.  檢查是否缺少 UTM 參數。
+            4.  檢查是否缺少 UTM 參數。（必須檢查的重點項目，務必跟使用者確認）
                 *   若缺少，告知使用者缺少 UTM 參數的風險。
                 *   若使用者確認，則使用預設 UTM 參數。(預設的UTM是utm_source=PicSee, utm_medium=PicSee, utm_campaign=PicSee)
             5.  呼叫 PicSee API 產生短網址。
@@ -81,7 +81,7 @@ class PicSeeAgent:
             raise ValueError("GOOGLE_API_KEY not set")
 
         genai.configure(api_key=self.google_api_key)
-        self.model_name = "gemini-2.5-flash"
+        self.model_name = "gemini-2.5-flash-lite"
 
         self.tools = [
             types.Tool(

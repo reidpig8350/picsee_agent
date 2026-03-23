@@ -131,3 +131,16 @@ PICSEE_AGENT/
        * 修正 response.text 錯誤：將獲取模型回應文本的方式改為更明確的 response.candidates[0].content.parts[0].text。
 
 ---
+
+---
+20260323
+   1. 初期問題診斷與嘗試： 您提出需要修正 Cloud Run 服務中 GOOGLE_API_KEY 的配置問題。我首先嘗試執行您提供的 gcloud run services update 指令，但因為在我執行的環境中找不到
+      gcloud 命令而失敗。
+   2. 程式碼審查： 我檢查了 agent.py，確認 GOOGLE_API_KEY 是透過環境變數 os.getenv() 讀取的。
+   3. 確認配置問題： 在參考了另一位 Gemini 助理的診斷後，我們確認問題在於 cloudbuild.yaml 中，gcloud run deploy 命令在處理 GOOGLE_API_KEY 和 PICSEE_ACCESS_TOKEN 的
+      --set-env-vars 參數時，將 SECRET_NAME=... 語法誤認為字串，而非從 Secret Manager 獲取秘密值。
+   4. 修改 cloudbuild.yaml： 我修改了 cloudbuild.yaml 檔案，將 GOOGLE_API_KEY 和 PICSEE_ACCESS_TOKEN 的秘密注入方式，從 set-env-vars 中的 SECRET_NAME=...
+      語法，改為使用更可靠的 --set-secrets 旗標 (ENV_VAR_NAME=SECRET_NAME:VERSION)。
+   5. 提供部署指令： 我向您提供了使用 gcloud builds submit 命令觸發 Cloud Build 的指令，以便您重新部署服務。
+
+  目前我們已解決了 Cloud Run 配置秘密金鑰的語法問題，並準備好進行新的部署。最新的部署日誌顯示遇到配額限制問題，但這是另一個獨立的問題。
