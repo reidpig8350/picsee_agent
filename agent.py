@@ -1,9 +1,11 @@
 import logging
 import os
+import time
 
 import requests
 import google.generativeai as genai
 from google.generativeai import types
+from google.api_core.exceptions import ResourceExhausted
 
 # (Local Modules)
 import picsee_api
@@ -148,7 +150,26 @@ class PicSeeAgent:
             system_instruction=self.system_instruction_parts
         )
 
-        response = model_instance.generate_content(contents=contents_dialogs)
+        # Implement retry logic with exponential backoff for generate_content
+        max_retries = 3
+        retry_delay = 1  # seconds
+        for i in range(max_retries):
+            try:
+                response = model_instance.generate_content(contents=contents_dialogs)
+                break  # If successful, break out of the loop
+            except genai.types.model_error.ResourceExhausted as e:
+                logging.warning(f"Quota exceeded (attempt {i + 1}/{max_retries}): {e}")
+                if i < max_retries - 1:
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    raise  # Re-raise the exception if all retries fail
+            except Exception as e:
+                # Catch other potential exceptions during content generation
+                logging.error(f"Error during content generation: {e}")
+                raise # Re-raise other exceptions immediately
+
+
 
         # Check for function calls
         if response.candidates and response.candidates[0].content.parts and response.candidates[0].content.parts[0].function_call:
